@@ -180,26 +180,47 @@ async function fetchQuotesFromServer() {
 }
 
 
+async function postQuotesToServer() {
+  try {
+    const response = await fetch("https://jsonplaceholder.typicode.com/posts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        quotes: quotes
+      })
+    });
+
+    const result = await response.json();
+    console.log("Quotes successfully posted to server:", result);
+  } catch (error) {
+    console.error("Error posting quotes to server:", error);
+  }
+}
+
 
 async function syncWithServer() {
+  const syncStatus = document.getElementById("syncStatus");
   syncStatus.textContent = "Syncing with server...";
 
-  const serverQuotes = await fetchServerQuotes();
+  // Fetch server data (server wins conflicts)
+  const serverQuotes = await fetchQuotesFromServer();
 
-  if (serverQuotes.length === 0) {
-    syncStatus.textContent = "No updates from server.";
-    return;
+  if (serverQuotes.length > 0) {
+    quotes = serverQuotes;
+    saveQuotes();
   }
 
-  // Conflict resolution: server data wins
-  quotes = serverQuotes;
-  saveQuotes();
+  // Post local data back to server
+  await postQuotesToServer();
 
   populateCategories();
   filterQuotes();
 
-  syncStatus.textContent = "Data synced. Server updates applied.";
+  syncStatus.textContent = "Sync complete. Server and local data updated.";
 }
+
 
 
 // Auto sync every 30 seconds
