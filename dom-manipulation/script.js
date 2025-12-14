@@ -18,6 +18,8 @@ const SERVER_URL = "https://jsonplaceholder.typicode.com/posts";
 const syncStatus = document.getElementById("syncStatus");
 
 
+
+
 // ----------------------
 // STORAGE HELPERS
 // ----------------------
@@ -221,6 +223,29 @@ async function syncWithServer() {
   syncStatus.textContent = "Sync complete. Server and local data updated.";
 }
 
+
+document.getElementById("syncBtn").addEventListener("click", syncQuotes);
+
+async function syncQuotes() {
+  const syncStatus = document.getElementById("syncStatus");
+  syncStatus.textContent = "Syncing quotes...";
+
+  // Fetch quotes from server (server takes precedence)
+  const serverQuotes = await fetchQuotesFromServer();
+
+  if (serverQuotes.length > 0) {
+    quotes = serverQuotes;
+    saveQuotes();
+  }
+
+  // Post local quotes back to server
+  await postQuotesToServer();
+
+  populateCategories();
+  filterQuotes();
+
+  syncStatus.textContent = "Quotes synced successfully.";
+}
 
 
 // Auto sync every 30 seconds
