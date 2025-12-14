@@ -163,23 +163,22 @@ populateCategories();
 filterQuotes();
 
 
-async function fetchServerQuotes() {
+async function fetchQuotesFromServer() {
   try {
-    const response = await fetch(SERVER_URL);
+    const response = await fetch("https://jsonplaceholder.typicode.com/posts");
     const data = await response.json();
 
-    // Simulate quotes structure from server data
-    const serverQuotes = data.slice(0, 5).map(item => ({
+    // Simulate quotes from server response
+    return data.slice(0, 5).map(item => ({
       text: item.title,
       category: "Server"
     }));
-
-    return serverQuotes;
   } catch (error) {
-    console.error("Error fetching server data:", error);
+    console.error("Error fetching quotes from server:", error);
     return [];
   }
 }
+
 
 
 async function syncWithServer() {
