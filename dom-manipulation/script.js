@@ -1,8 +1,7 @@
 // ----------------------
-// QUOTES DATA MANAGEMENT
+// LOAD QUOTES FROM STORAGE
 // ----------------------
 
-// Load quotes from localStorage or use default
 let quotes = JSON.parse(localStorage.getItem("quotes")) || [
   { text: "The only way to do great work is to love what you do.", category: "Motivation" },
   { text: "Faith is taking the first step even when you don't see the whole staircase.", category: "Faith" }
@@ -14,10 +13,10 @@ let quotes = JSON.parse(localStorage.getItem("quotes")) || [
 
 const quoteDisplay = document.getElementById("quoteDisplay");
 const newQuoteBtn = document.getElementById("newQuote");
-const exportBtn = document.getElementById("exportQuotes");
+const categoryFilter = document.getElementById("categoryFilter");
 
 // ----------------------
-// STORAGE FUNCTIONS
+// STORAGE HELPERS
 // ----------------------
 
 function saveQuotes() {
@@ -25,7 +24,60 @@ function saveQuotes() {
 }
 
 // ----------------------
-// QUOTE DISPLAY
+// POPULATE CATEGORIES (REQUIRED)
+// ----------------------
+
+function populateCategories() {
+  const categories = new Set();
+
+  quotes.forEach(quote => categories.add(quote.category));
+
+  // Reset dropdown
+  categoryFilter.innerHTML = `<option value="all">All Categories</option>`;
+
+  categories.forEach(category => {
+    const option = document.createElement("option");
+    option.value = category;
+    option.textContent = category;
+    categoryFilter.appendChild(option);
+  });
+
+  // Restore last selected filter
+  const savedFilter = localStorage.getItem("selectedCategory");
+  if (savedFilter) {
+    categoryFilter.value = savedFilter;
+  }
+}
+
+// ----------------------
+// FILTER QUOTES (REQUIRED)
+// ----------------------
+
+function filterQuotes() {
+  const selectedCategory = categoryFilter.value;
+  localStorage.setItem("selectedCategory", selectedCategory);
+
+  let filteredQuotes =
+    selectedCategory === "all"
+      ? quotes
+      : quotes.filter(q => q.category === selectedCategory);
+
+  quoteDisplay.innerHTML = "";
+
+  if (filteredQuotes.length === 0) {
+    quoteDisplay.textContent = "No quotes found for this category.";
+    return;
+  }
+
+  filteredQuotes.forEach(quote => {
+    const quoteEl = document.createElement("p");
+    quoteEl.textContent = `"${quote.text}" — (${quote.category})`;
+    quoteDisplay.appendChild(quoteEl);
+  });
+}
+
+// ----------------------
+// SHOW RANDOM QUOTE
 // ----------------------
 
 function showRandomQuote() {
@@ -36,25 +88,10 @@ function showRandomQuote() {
     <p>"${quote.text}"</p>
     <small>Category: ${quote.category}</small>
   `;
-
-  // Save last viewed quote (session storage)
-  sessionStorage.setItem("lastViewedQuote", JSON.stringify(quote));
-}
-
-// Restore last viewed quote (session only)
-function loadLastViewedQuote() {
-  const lastQuote = sessionStorage.getItem("lastViewedQuote");
-  if (lastQuote) {
-    const quote = JSON.parse(lastQuote);
-    quoteDisplay.innerHTML = `
-      <p>"${quote.text}"</p>
-      <small>Category: ${quote.category}</small>
-    `;
-  }
 }
 
 // ----------------------
-// ADD QUOTE FORM (REQUIRED)
+// ADD QUOTE FORM
 // ----------------------
 
 function createAddQuoteForm() {
@@ -80,7 +117,7 @@ function createAddQuoteForm() {
 }
 
 // ----------------------
-// ADD QUOTE LOGIC
+// ADD QUOTE LOGIC (UPDATED)
 // ----------------------
 
 function addQuote() {
@@ -98,52 +135,11 @@ function addQuote() {
   document.getElementById("newQuoteText").value = "";
   document.getElementById("newQuoteCategory").value = "";
 
-  quoteDisplay.textContent = "Quote added and saved!";
-}
+  // Update categories dynamically
+  populateCategories();
+  filterQuotes();
 
-// ----------------------
-// JSON EXPORT
-// ----------------------
-
-function exportQuotesToJson() {
-  const dataStr = JSON.stringify(quotes, null, 2);
-  const blob = new Blob([dataStr], { type: "application/json" });
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = "quotes.json";
-  link.click();
-
-  URL.revokeObjectURL(url);
-}
-
-// ----------------------
-// JSON IMPORT
-// ----------------------
-
-function importFromJsonFile(event) {
-  const fileReader = new FileReader();
-
-  fileReader.onload = function (event) {
-    try {
-      const importedQuotes = JSON.parse(event.target.result);
-
-      if (!Array.isArray(importedQuotes)) {
-        throw new Error("Invalid JSON format");
-      }
-
-      quotes.push(...importedQuotes);
-      saveQuotes();
-
-      alert("Quotes imported successfully!");
-    } catch (error) {
-      alert("Invalid JSON file.");
-    }
-  };
-
-  fileReader.readAsText(event.target.files[0]);
+  quoteDisplay.textContent = "Quote added successfully!";
 }
 
 // ----------------------
@@ -151,11 +147,11 @@ function importFromJsonFile(event) {
 // ----------------------
 
 newQuoteBtn.addEventListener("click", showRandomQuote);
-exportBtn.addEventListener("click", exportQuotesToJson);
 
 // ----------------------
 // INITIALIZATION
 // ----------------------
 
 createAddQuoteForm();
-loadLastViewedQuote();
+populateCategories();
+filterQuotes();
