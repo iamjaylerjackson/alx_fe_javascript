@@ -14,6 +14,9 @@ let quotes = JSON.parse(localStorage.getItem("quotes")) || [
 const quoteDisplay = document.getElementById("quoteDisplay");
 const newQuoteBtn = document.getElementById("newQuote");
 const categoryFilter = document.getElementById("categoryFilter");
+const SERVER_URL = "https://jsonplaceholder.typicode.com/posts";
+const syncStatus = document.getElementById("syncStatus");
+
 
 // ----------------------
 // STORAGE HELPERS
@@ -158,3 +161,50 @@ newQuoteBtn.addEventListener("click", showRandomQuote);
 createAddQuoteForm();
 populateCategories();
 filterQuotes();
+
+
+async function fetchServerQuotes() {
+  try {
+    const response = await fetch(SERVER_URL);
+    const data = await response.json();
+
+    // Simulate quotes structure from server data
+    const serverQuotes = data.slice(0, 5).map(item => ({
+      text: item.title,
+      category: "Server"
+    }));
+
+    return serverQuotes;
+  } catch (error) {
+    console.error("Error fetching server data:", error);
+    return [];
+  }
+}
+
+
+async function syncWithServer() {
+  syncStatus.textContent = "Syncing with server...";
+
+  const serverQuotes = await fetchServerQuotes();
+
+  if (serverQuotes.length === 0) {
+    syncStatus.textContent = "No updates from server.";
+    return;
+  }
+
+  // Conflict resolution: server data wins
+  quotes = serverQuotes;
+  saveQuotes();
+
+  populateCategories();
+  filterQuotes();
+
+  syncStatus.textContent = "Data synced. Server updates applied.";
+}
+
+
+// Auto sync every 30 seconds
+setInterval(syncWithServer, 30000);
+
+
+document.getElementById("syncBtn").addEventListener("click", syncWithServer);
